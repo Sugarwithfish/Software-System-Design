@@ -10,6 +10,12 @@ type Question struct {
 	Language string `json:"language" gorm:"size:50"`            // 语言
 }
 
+type QuestionSummary struct {
+	ID    int64  `json:"id"`                     // 题目 id
+	Type  int    `json:"type"`                   // 题型：1-单选题  2-多选题  3-编程题
+	Title string `json:"title" gorm:"type:text"` // 标题
+}
+
 type PageQueryResult struct {
 	Records interface{} `json:"records"`
 	Total   int64       `json:"total"`
