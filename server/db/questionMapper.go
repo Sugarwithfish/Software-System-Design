@@ -31,7 +31,7 @@ func QuestionPageQuery(questionType int, keyword string, pageNum, pageSize int) 
 	}
 
 	// 指定查询结果字段
-	query = query.Select("id", "type", "title")
+	query = query.Select("id", "type", "title", "content", "options", "answer", "language")
 
 	// 获取分页数据
 	offset := (pageNum - 1) * pageSize

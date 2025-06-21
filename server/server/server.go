@@ -8,6 +8,7 @@ import (
 	req "github.com/Sugarwithfish/Software-System-Design/models/request"
 	"github.com/Sugarwithfish/Software-System-Design/utils"
 	"gorm.io/gorm"
+	"log"
 )
 
 func ListQuestion(param req.ListQuestionParam) (*models.PageQueryResult, error) {
@@ -17,16 +18,10 @@ func ListQuestion(param req.ListQuestionParam) (*models.PageQueryResult, error) 
 		return nil, err
 	}
 
-	var questionVOs []*models.QuestionSummary
+	var questionVOs []*models.Question
 	for _, question := range questions {
-		q := &models.QuestionSummary{
-			ID:    question.ID,
-			Type:  question.Type,
-			Title: question.Title,
-		}
-		questionVOs = append(questionVOs, q)
+		questionVOs = append(questionVOs, question)
 	}
-
 	return &models.PageQueryResult{
 		Records: questionVOs,
 		Total:   total,
@@ -53,6 +48,7 @@ func GetQuestion(id int64) (*models.Question, error) {
 }
 
 func CreateQuestion(questionCreate *req.QuestionCreate) error {
+	log.Println(questionCreate)
 	if questionCreate.Title == "" {
 		return errors.New("标题不为空")
 	}
@@ -65,6 +61,7 @@ func CreateQuestion(questionCreate *req.QuestionCreate) error {
 		var answer []int
 		err = json.Unmarshal([]byte(questionCreate.Answer), &answer)
 		if err != nil {
+			log.Println(err.Error())
 			return errors.New("选择题的答案格式有误！")
 		}
 		if questionCreate.Type == 1 && len(answer) != 1 {
@@ -86,6 +83,7 @@ func CreateQuestion(questionCreate *req.QuestionCreate) error {
 	if err := db.InsertQuestion(question); err != nil {
 		return errors.New("数据库插入失败: " + err.Error())
 	}
+
 	return nil
 }
 

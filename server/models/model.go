@@ -1,7 +1,7 @@
 package models
 
 type Question struct {
-	ID       int64  `json:"id"`                                 // 题目 id
+	ID       int64  `json:"id,string"`                          // 题目 id
 	Type     int    `json:"type"`                               // 题型：1-单选题  2-多选题  3-编程题
 	Title    string `json:"title" gorm:"type:text"`             // 标题
 	Content  string `json:"content" gorm:"type:text"`           // 内容

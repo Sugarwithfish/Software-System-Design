@@ -1,6 +1,8 @@
 package main
 
 import (
+	"github.com/Sugarwithfish/Software-System-Design/server"
+	"github.com/Sugarwithfish/Software-System-Design/utils"
 	"log"
 
 	_ "github.com/Sugarwithfish/Software-System-Design/config"
@@ -12,11 +14,15 @@ import (
 func main() {
 	// 加载配置
 	config := configs.GetConfig()
-
+	llmCfg := &server.LLMConfig{
+		APIKey:  config.OpenAIAPIKey,
+		BaseURL: config.OpenAIBaseURL,
+		Model:   config.OpenAIModel,
+	}
 	// 初始化数据库
 	db.InitDB(config.DBPath)
-
-	r := routes.SetupRouter()
+	utils.InitSnowflakeNode(1000)
+	r := routes.SetupRouter(llmCfg)
 	log.Printf("服务器启动于 %s 端口", config.ServerAddr)
 
 	err := r.Run(config.ServerAddr)

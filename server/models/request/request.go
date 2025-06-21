@@ -17,7 +17,7 @@ type QuestionCreate struct {
 }
 
 type QuestionEdit struct {
-	ID       int64  `json:"id"`                                 // 题目 id
+	ID       int64  `json:"id,string"`                          // 题目 id
 	Type     int    `json:"type"`                               // 题型：1-单选题  2-多选题  3-编程题
 	Title    string `json:"title" gorm:"type:text"`             // 标题
 	Content  string `json:"content" gorm:"type:text"`           // 内容
@@ -30,4 +30,14 @@ type AIGenQuestionParams struct {
 	Type     int
 	Language string
 	Amount   int
+}
+
+type DeleteQuestion struct {
+	IDs []string `json:"ids,string"` // 需要删除的 id
+}
+
+type AIGenQuestion struct {
+	Type     *int   `json:"type"`     // 题型：1-单选题  2-多选题  3-编程题
+	Language string `json:"language"` // 编程语言
+	Amount   *int   `json:"amount"`   // 出题数量
 }
