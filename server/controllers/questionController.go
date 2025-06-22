@@ -204,7 +204,7 @@ func EditQuestionHandler() func(c *gin.Context) {
 // @Param       request body request.AIGenQuestion true "生成题目参数"
 // @Success     200 {object} response.Response "成功 (Code: 0), 参数错误 (Code: -1), 内部错误 (Code: -3)"
 // @Router      /api/v1/questions/ai-generate [post]
-func AIGenQuestionHandler(cfg *server.LLMConfig) func(c *gin.Context) {
+func AIGenQuestionHandler() func(c *gin.Context) {
 	return func(c *gin.Context) {
 		// 获取请求参数
 		var req request.AIGenQuestion
@@ -246,7 +246,7 @@ func AIGenQuestionHandler(cfg *server.LLMConfig) func(c *gin.Context) {
 		}
 
 		// 调用服务层逻辑
-		questions, err := server.AIGenerateQuestion(llmParams, cfg)
+		questions, err := server.AIGenerateQuestion(llmParams)
 		if err != nil {
 			utils.FailWithMsg(c, utils.ERROR_INTERNAL, err.Error())
 			return

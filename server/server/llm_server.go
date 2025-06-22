@@ -37,10 +37,20 @@ type LLMConfig struct {
 	Model   string `json:"model"`
 }
 
-func Dochat(config *LLMConfig, systemMessage string, userMessage string) (string, error) {
+var cfg *LLMConfig
+
+func InitLLM(key, url, model string) {
+	cfg = &LLMConfig{
+		APIKey:  key,
+		BaseURL: url,
+		Model:   model,
+	}
+}
+
+func Dochat(systemMessage string, userMessage string) (string, error) {
 	client := openai.NewClient(
-		option.WithAPIKey(config.APIKey),
-		option.WithBaseURL(config.BaseURL),
+		option.WithAPIKey(cfg.APIKey),
+		option.WithBaseURL(cfg.BaseURL),
 	)
 
 	chatCompletion, err := client.Chat.Completions.New(context.TODO(),
@@ -49,7 +59,7 @@ func Dochat(config *LLMConfig, systemMessage string, userMessage string) (string
 				openai.SystemMessage(systemMessage),
 				openai.UserMessage(userMessage),
 			},
-			Model: openai.ChatModel(config.Model),
+			Model: openai.ChatModel(cfg.Model),
 		})
 	if err != nil {
 		return "", err
@@ -85,9 +95,9 @@ func handlePrompt(params request.AIGenQuestionParams) (string, string, bool) {
 	return systemMessage, userMessage, isCoding
 }
 
-func AIGenerateQuestion(params request.AIGenQuestionParams, cfg *LLMConfig) ([]*response.AIGenQuestion, error) {
+func AIGenerateQuestion(params request.AIGenQuestionParams) ([]*response.AIGenQuestion, error) {
 	systemMessage, userMessage, isCoding := handlePrompt(params)
-	chatResponse, err := Dochat(cfg, systemMessage, userMessage)
+	chatResponse, err := Dochat(systemMessage, userMessage)
 	if err != nil {
 		return nil, fmt.Errorf("大模型服务调用失败: %w", err)
 	}

@@ -2,11 +2,10 @@ package routes
 
 import (
 	"github.com/Sugarwithfish/Software-System-Design/controllers"
-	"github.com/Sugarwithfish/Software-System-Design/server"
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(llmConfig *server.LLMConfig) *gin.Engine {
+func SetupRouter() *gin.Engine {
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -33,7 +32,7 @@ func SetupRouter(llmConfig *server.LLMConfig) *gin.Engine {
 
 		questions := apiV1.Group("/questions")
 		{
-			questions.POST("/ai-generate", controllers.AIGenQuestionHandler(llmConfig)) // AI生成题目
+			questions.POST("/ai-generate", controllers.AIGenQuestionHandler()) // AI生成题目
 			questions.GET("", controllers.ListQuestionHandler())                        // 获取题目列表
 			questions.DELETE("", controllers.DeleteQuestionHandler())                   // 删除题目 (批量)
 			questions.GET("/:id", controllers.GetQuestionHandler())                     // 获取题目详情

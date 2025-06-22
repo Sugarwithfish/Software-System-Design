@@ -63,8 +63,8 @@ func GetConfig() *Config {
 		DBPath:     getEnv("DB_PATH", "examgen.db"),
 		// SnowflakeNodeId: snowflakeNodeId,
 		OpenAIAPIKey:  getEnv("OPENAI_API_KEY", ""),
-		OpenAIBaseURL: getEnv("OPENAI_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1/"),
-		OpenAIModel:   getEnv("OPENAI_MODEL", "deepseek-v3"),
+		OpenAIBaseURL: getEnv("OPENAI_BASE_URL", ""),
+		OpenAIModel:   getEnv("OPENAI_MODEL", ""),
 	}
 }
 
