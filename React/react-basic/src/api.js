@@ -17,6 +17,10 @@ export const api = {
         if (keyword) params.append('keyword', keyword);
         params.append('pageNum', pageNum);
         params.append('pageSize', pageSize);
+        console.log(type);
+        console.log(keyword);
+        console.log(pageNum);
+        console.log(pageSize);
 
         const response = await fetch(`${API_BASE_URL}/questions?${params}`);
         return handleResponse(response);

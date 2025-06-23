@@ -8,17 +8,23 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddQuestionDropdown, setShowAddQuestionDropdown] = useState(false);
   const [selectedQuestions, setSelectedQuestions] = useState([]);
+  const [selectedaiQuestions, setSelectedaiQuestions] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [questionToDelete, setQuestionToDelete] = useState(null);
+  const [aiquestionToDelete, setaiQuestionToDelete] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState(null);
+  const [aieditingQuestion, setaiEditingQuestion] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [aiGeneratedQuestions, setAiGeneratedQuestions] = useState([]);
   const [showAIPreview, setShowAIPreview] = useState(false);
+  const [aiQuestionCount, setAIQuestionCount] = useState(1);
+  const [aiQuestions, setaiQuestions] = useState([]);
+  const [showAIModal, setShowAIModal] = useState(false);
   const QUESTION_TYPE_MAP = {
     1: '单选题',
     2: '多选题',
@@ -44,7 +50,6 @@ function App() {
         if(data.code === 0 && data.data.records === null){
           return;
         }
-        console.log(data);
         const formattedQuestions = data.data.records.map(q => ({
           ...q,
           type: QUESTION_TYPE_MAP[q.type],
@@ -56,6 +61,7 @@ function App() {
           selected: false,
         }));
         setQuestions(formattedQuestions);
+        console.log(questions)
         setTotalQuestions(data.total);
       } catch (error) {
         console.error('加载题目失败:', error);
@@ -96,6 +102,7 @@ function App() {
         q.id === id ? { ...q, selected: !q.selected } : q
     ));
 
+
     setSelectedQuestions(prev => {
       if (prev.includes(id)) {
         return prev.filter(qId => qId !== id);
@@ -104,6 +111,21 @@ function App() {
       }
     });
   };
+  const toggleQuestion = (id) => {
+    setaiQuestions(aiQuestions.map(q =>
+        q.id === id ? { ...q, selected: !q.selected } : q
+    ));
+
+
+    setSelectedaiQuestions(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(qId => qId !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
     // 这里实际应该打开对应的添加题目模态框
   const handleAddQuestion = async (type) => {
     if (type === 'manual') {
@@ -123,13 +145,15 @@ function App() {
     } else {
       try {
         setIsLoading(true);
-        const generated = await api.generateQuestions({
+        // 1.setaiquesitons
+        // 2.generate封装
+        // 3.创建usestate=generate+返回+id
+        // 4.save
+        setAiGeneratedQuestions(({
           type: '单选题',
-          count: 5,
-          difficulty: 'medium',
-          language: 'js'
-        });
-        setAiGeneratedQuestions(generated);
+          languages: 'js',
+          amount: 2
+        }));
         setShowAIPreview(true);
       } catch (error) {
         console.error('AI生成题目失败:', error);
@@ -141,23 +165,62 @@ function App() {
     setShowAddQuestionDropdown(false);
   };
 
-  const handleSaveAIGeneratedQuestions = async (selectedIds) => {
+  const gernerate = async()=>{
+
+    const generated = await api.generateQuestions({
+      type: REVERSE_QUESTION_TYPE_MAP[aiGeneratedQuestions.type],
+      language: aiGeneratedQuestions.languages,
+      amount: parseInt(aiGeneratedQuestions.amount[0])
+    });
+
+    console.log(aiGeneratedQuestions.amount)
+    console.log(typeof (aiGeneratedQuestions.amount))
+    console.log("!!!!!!!!!!!!!!")
+    console.log(generated)
+     const generatequesion =generated.data.map((q,index) => ({
+       ...q,
+       id:index,
+       type: aiGeneratedQuestions.type,
+       language:aiGeneratedQuestions.languages,
+       title: q.title,
+       content: q.content,
+       options: q.options ?JSON.parse(q.options):["", "", "", ""],
+       answer: q.answer ? JSON.parse(q.answer):[""],
+       selected:false
+     }));
+     console.log(generatequesion)
+     setaiQuestions(generatequesion);
+     setShowAIModal(true);
+  }
+  const handleSaveAIGeneratedQuestions = async () => {
     try {
       setIsLoading(true);
-      const toSave = aiGeneratedQuestions.filter(q => selectedIds.includes(q.id));
-      const result = await api.saveAIGeneratedQuestions(toSave);
+      const toSave = aiQuestions.filter(q => q.selected);
+      const save= toSave.map(q=>({
+        type:REVERSE_QUESTION_TYPE_MAP[q.type],
+        title:q.title,
+        content:q.content,
+        options:JSON.stringify(q.options),
+        answer:JSON.stringify(q.answer),
+        language:q.language
+      }));
 
-      if (result.success) {
+      const result = await api.batchCreateQuestions(save);
+      console.log(result);
+      if (result.code===0) {
         const data = await api.getQuestions({
-          page: currentPage,
+          pageNum: currentPage,
           pageSize: itemsPerPage,
           type: activeQuestionType === '全部' ? '0' : REVERSE_QUESTION_TYPE_MAP[activeQuestionType],
           keyword: searchQuery
         });
-        setQuestions(data.questions);
+        console.log(data);
+
+        setQuestions(data.data.records);
         setTotalQuestions(data.total);
         setShowAIPreview(false);
-        alert(`成功保存${result.savedCount}道题目`);
+        alert(`成功保存题目`);
+        setaiQuestions([])
       }
     } catch (error) {
       console.error('保存AI题目失败:', error);
@@ -349,9 +412,18 @@ function App() {
     setQuestionToDelete(id);
     setShowDeleteConfirm(true);
   };
+  const aihandleDeleteQuestion = (id) => {
+    // 删除题目函数
+    setaiQuestions(prevQuestions => prevQuestions.filter(q => q.id !== id));
+  };
 
 
   const handleEditQuestion = (question) => {
+    //编辑题目函数
+    setEditingQuestion(question);
+    setShowEditModal(true);
+  };
+  const aihandleEditQuestion = (question) => {
     //编辑题目函数
     setEditingQuestion(question);
     setShowEditModal(true);
@@ -405,10 +477,8 @@ function App() {
           {/* 导航栏 */}
           <nav className={`sidebar ${isNavCollapsed ? 'collapsed' : ''}`}>
             <ul>
-              <li><a href="#">首页</a></li>
-              <li><a href="#">题库管理</a></li>
-              <li><a href="#">用户管理</a></li>
-              <li><a href="#">系统设置</a></li>
+              <li><a href="#">学习心得</a></li>
+              <li><a href="#main">题库管理</a></li>
             </ul>
           </nav>
 
@@ -515,7 +585,7 @@ function App() {
                   上一页
                 </button>
 
-                {Array.from({ length: Math.min(5, pageCount) }, (_, i) => {
+                {Array.from({ length: Math.min(5, 6) }, (_, i) => {
                   let pageNum;
                   if (pageCount <= 5) {
                     pageNum = i + 1;
@@ -578,7 +648,7 @@ function App() {
 
         {/* 删除确认弹窗 */}
         {showDeleteConfirm && (
-            <div className="modal-overlay">
+            <div className="modal-overlay-father">
               <div className="confirm-modal">
                 <h3>确认删除</h3>
                 <p>{questionToDelete ? '确定要删除这道题目吗？' : `确定要删除选中的${selectedQuestions.length}道题目吗？`}</p>
@@ -594,7 +664,7 @@ function App() {
         )}
 
         {showEditModal && (
-            <div className="modal-overlay">
+            <div className="modal-overlay-father">
               <div className="edit-modal">
                 <h3>{editingQuestion.id > 0 ? '编辑题目' : '新增题目'}</h3>
                 <div className="form-group">
@@ -729,6 +799,125 @@ function App() {
                   <button onClick={() => setShowEditModal(false)}>取消</button>
                 </div>
               </div>
+            </div>
+        )}
+        {showAIPreview && (
+            <div className="modal-overlay-kid">
+              <div className="edit-modal">
+                <h3>AI出题</h3>
+                <div className="form-group">
+                  <label>题型：</label>
+                  <select
+                      value={aiGeneratedQuestions.type}
+                      onChange={(e) => setAiGeneratedQuestions({
+                        ...aiGeneratedQuestions,
+                        type: e.target.value,
+                      })}
+                  >
+                    <option value="单选题">单选题</option>
+                    <option value="多选题">多选题</option>
+                    <option value="编程题">编程题</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>编程语言：</label>
+                  <select
+                      value={aiGeneratedQuestions.languages}
+                      onChange={(e) => setAiGeneratedQuestions({
+                        ...aiGeneratedQuestions,
+                        languages: e.target.value,
+                      })}
+                  >
+                    <option value="js">JavaScript</option>
+                    <option value="go">Go</option>
+                  </select>
+                </div>
+                {/*题目数量*/}
+                <div className="form-group">
+                  <label>题目数量：</label>
+                  <select
+                      value={aiGeneratedQuestions.amount}
+                      onChange={(e) => setAiGeneratedQuestions(
+                          {
+                            ...aiGeneratedQuestions,
+                            amount: [e.target.value]
+                          }
+                      )}
+                  >
+                    {Array.from({length: 10}, (_, i) => i + 1).map(num => (
+                        <option key={num} value={num}>{num}题</option>
+                    ))}
+                  </select>
+                </div>
+                {/* 右侧：AI出题区域 */}
+                <div className="ai-preview-section">
+                  <h4>AI生成预览</h4>
+                  {showAIModal&&<div className="questions-table">
+                    <table>
+                      <thead>
+                      <tr>
+                        <th width="50px"><input type="checkbox" /></th>
+                        <th>题目标题</th>
+                        <th width="100px">题型</th>
+                        <th width="100px">语言</th>
+                        <th width="150px">操作</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      {aiQuestions.map(question => (
+                          <tr key={question.id}>
+                            <td>
+                              <input
+                                  type="checkbox"
+                                  checked={question.selected}
+                                  onChange={() => toggleQuestion(question.id)}
+                              />
+                            </td>
+                            <td>{question.title}</td>
+                            <td>{question.type}</td>
+                            <td>{question.language}</td>
+                            <td>
+                              <button
+                                  className="edit-btn"
+                                  onClick={() => aihandleEditQuestion(question)}
+                              >
+                                编辑
+                              </button>
+                              <button
+                                  className="delete-btn"
+                                  onClick={() => aihandleDeleteQuestion(question.id)}
+                              >
+                                删除
+                              </button>
+                            </td>
+                          </tr>
+                      ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  }
+
+
+                  <div className="ai-actions">
+                    <button
+                        className="generate-btn"
+                        onClick={()=>gernerate()}
+                    >
+                      <i className="ai-icon">🤖</i> 生成题目
+                    </button>
+                  </div>
+
+
+
+                  <div className="modal-actions">
+                    <button onClick={handleSaveAIGeneratedQuestions}>保存</button>
+                    <button onClick={() => setShowAIPreview(false)}>取消</button>
+                  </div>
+                </div>
+              </div>
+
+
+
             </div>
         )}
       </div>
